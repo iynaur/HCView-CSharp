@@ -10,22 +10,24 @@ using System.Windows.Forms;
 
 namespace EMRView
 {
-    public class HCViewIH : HCView
+    public class HCEmrViewIH : HCViewTool
     {
-        private HCInputHelper FInputHelper;
+        private frmInputHelper FInputHelper;
+        private const string CARETSTOPCHAR = "，,。;；：:";
 
+#if GLOBALSHORTKEY
         private const int WH_KEYBOARD_LL = 13;  // //低级键盘钩子的索引值
         private const uint LLKHF_ALTDOWN = 0x20;
-        private const string CARETSTOPCHAR = "，,。;；：:";
         private IntPtr HHKLowLevelKybd = IntPtr.Zero;
         private FNHookProc HookProc;
+
 
         private int KeyboardProc(int nCode, int wParam, IntPtr lParam)
         {
             int Result = 0;
             bool vEatKeystroke = false;
 
-            if (nCode == User.HC_ACTION)
+            if (((IntPtr)User.GetFocus() == this.Handle) && (nCode == User.HC_ACTION))
             {
                 if ((wParam == User.WM_SYSKEYDOWN) || (wParam == User.WM_SYSKEYUP))
                 {
@@ -34,7 +36,7 @@ namespace EMRView
                     {
                         if (vPKB.vkCode == User.VK_SPACE)
                         {
-                            FInputHelper.Show();
+                            FInputHelper.ShowEx();
                             vEatKeystroke = true;
                         }
                     }
@@ -57,7 +59,7 @@ namespace EMRView
                 HookProc -= KeyboardProc;
                 HookProc += KeyboardProc;
                 IntPtr lpfn = Marshal.GetFunctionPointerForDelegate(HookProc);
-                IntPtr hInstance = Marshal.GetHINSTANCE(this.GetType().Module);
+                IntPtr hInstance = Marshal.GetHINSTANCE(this.GetType().Module);  //  (IntPtr)Kernel.GetModuleHandle(Process.GetCurrentProcess().MainModule.ModuleName);
                 HHKLowLevelKybd = (IntPtr)User.SetWindowsHookEx(WH_KEYBOARD_LL, lpfn, hInstance, 0);
             }
         }
@@ -70,21 +72,22 @@ namespace EMRView
                 HHKLowLevelKybd = IntPtr.Zero;
             }
         }
+#endif
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (FInputHelper.Enable && (e.Control) && (e.Shift) && (e.KeyCode == Keys.Space))
-                FInputHelper.Show();
+            if ((!this.ReadOnly) && FInputHelper.EnableEx && (e.Control) && (e.KeyCode == Keys.H))
+                FInputHelper.ShowEx();
             else
-               if (FInputHelper.Enable && (!e.Control) && (!e.Shift) && (e.KeyCode == Keys.Escape))
-                FInputHelper.Close();
+            if ((!this.ReadOnly) && FInputHelper.EnableEx && (!e.Control) && (!e.Shift) && (e.KeyCode == Keys.Escape))
+                FInputHelper.CloseEx();
             else
                 base.OnKeyDown(e);
         }
 
         protected override void WndProc(ref Message Message)
         {
-            if (FInputHelper.Enable)
+            if (FInputHelper.EnableEx)
             {
                 switch (Message.WParam.ToInt32())
                 {
@@ -98,7 +101,10 @@ namespace EMRView
             base.WndProc(ref Message);
 
             if (Message.Msg == User.WM_KILLFOCUS)
-                FInputHelper.Close();
+            {
+                if ((FInputHelper != null) && FInputHelper.EnableEx)
+                    FInputHelper.CloseEx();
+            }
         }
 
         protected virtual bool DoProcessIMECandi(string aCandi)
@@ -117,7 +123,7 @@ namespace EMRView
                     byte[] vBuffer = new byte[vSize];
                     Imm.ImmGetCompositionString(this.hImc, aType, vBuffer, vSize);
                     Result = System.Text.Encoding.Default.GetString(vBuffer);
-                    
+
                 }
             }
 
@@ -126,12 +132,12 @@ namespace EMRView
 
         protected override void UpdateImeComposition(int aLParam)
         {
-            if (FInputHelper.Enable && ((aLParam & Imm.GCS_COMPSTR) != 0))
+            if (FInputHelper.EnableEx && ((aLParam & Imm.GCS_COMPSTR) != 0))
             {
                 string vS = GetCompositionStr(Imm.GCS_COMPSTR);
                 FInputHelper.SetCompositionString(vS);
 
-                if (FInputHelper.Resize)
+                if (FInputHelper.ChangeSize)
                 {
                     COMPOSITIONFORM vCF = new COMPOSITIONFORM();
                     if (Imm.ImmGetCompositionWindow(this.hImc, ref vCF))
@@ -159,7 +165,7 @@ namespace EMRView
             vCF.ptCurrentPos.X = Caret.X;
             vCF.ptCurrentPos.Y = Caret.Y + Caret.Height + 4;
 
-            if (FInputHelper.Enable)
+            if (FInputHelper.EnableEx)
                 FInputHelper.ResetImeCompRect(ref vCF.ptCurrentPos);
 
             vCF.dwStyle = 0x0020;
@@ -167,7 +173,7 @@ namespace EMRView
             vCF.rcArea = new RECT(vr.Left, vr.Top, vr.Right, vr.Bottom);
             Imm.ImmSetCompositionWindow(this.hImc, ref vCF);
 
-            if (FInputHelper.Enable)
+            if (FInputHelper.EnableEx)
                 FInputHelper.CompWndMove(this.Handle, Caret.X, Caret.Y + Caret.Height);
         }
 
@@ -237,7 +243,7 @@ namespace EMRView
         {
             base.DoCaretChange();
 
-            if (!FInputHelper.Enable)
+            if (!FInputHelper.EnableEx)
                 return;
 
             string vsBefor = "";
@@ -279,29 +285,33 @@ namespace EMRView
             FInputHelper.SetCaretString(vsBefor, vsAfter);
         }
 
-        public HCViewIH() : base()
+        public HCEmrViewIH() : base()
         {
-            //SetIHKeyHook();  // 调试时可关掉提升效率
-            FInputHelper = new HCInputHelper();
+#if GLOBALSHORTKEY
+            SetIHKeyHook();  // 调试时可关掉提升效率
+#endif
+            FInputHelper = new frmInputHelper();
         }
 
-        ~HCViewIH()
+        ~HCEmrViewIH()
         {
-            //UnSetIHKeyHook();  // 调试时可关掉提升效率
+#if GLOBALSHORTKEY
+            UnSetIHKeyHook();  // 调试时可关掉提升效率
+#endif
         }
 
         public override bool PreProcessMessage(ref Message msg)
         {
-            if ((msg.Msg == User.WM_KEYDOWN) && (msg.WParam.ToInt32() == Imm.VK_PROCESSKEY))
+            if (FInputHelper.Visible && (msg.Msg == User.WM_KEYDOWN) && (msg.WParam.ToInt32() == Imm.VK_PROCESSKEY))
             {
                 uint vVirtualKey = Imm.ImmGetVirtualKey(msg.HWnd);
                 if (vVirtualKey - 127 == 59)  // ; 需要设置输入法;号的功能，如二三候选
                 {
-                    FInputHelper.Active = !FInputHelper.Active;
+                    FInputHelper.ActiveEx = !FInputHelper.ActiveEx;
                     return true;
                 }
                 else
-                if ((FInputHelper.Active) && ((vVirtualKey == 32) || ((vVirtualKey >= 49) && (vVirtualKey <= 57))))
+                if ((FInputHelper.ActiveEx) && ((vVirtualKey == 32) || ((vVirtualKey >= 49) && (vVirtualKey <= 57))))
                 {
                     User.keybd_event(User.VK_ESCAPE, 0, 0, 0);
                     User.keybd_event(User.VK_ESCAPE, 0, User.KEYEVENTF_KEYUP, 0);

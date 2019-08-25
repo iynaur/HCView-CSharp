@@ -9,11 +9,11 @@ using System.Windows.Forms;
 
 namespace EMRView
 {
-    public partial class frmDomainOper : Form
+    public partial class frmDomainInfo : Form
     {
         private int FDID;
 
-        public frmDomainOper()
+        public frmDomainInfo()
         {
             InitializeComponent();
             this.ShowInTaskbar = false;

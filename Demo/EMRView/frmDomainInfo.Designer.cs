@@ -1,6 +1,6 @@
 ﻿namespace EMRView
 {
-    partial class frmDomainOper
+    partial class frmDomainInfo
     {
         /// <summary>
         /// Required designer variable.
@@ -78,7 +78,7 @@
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
-            // frmDomainOper
+            // frmDomainInfo
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -90,7 +90,8 @@
             this.Controls.Add(this.label1);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "frmDomainOper";
+            this.Name = "frmDomainInfo";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "值域";
             this.ResumeLayout(false);
             this.PerformLayout();

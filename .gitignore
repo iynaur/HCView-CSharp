@@ -1,0 +1,7 @@
+Source/bin/
+Source/obj/
+Demo/EMRView/bin/
+Demo/EMRView/obj/
+Demo/HCView/bin/
+Demo/HCView/obj/
+.vs/

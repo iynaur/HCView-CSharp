@@ -591,7 +591,7 @@ namespace HCViewDemo
             if (vTopData == null)
                 vTopData = vActiveData;
 
-            mniTable.Enabled = vActiveItem.StyleNo == HCStyle.Table;
+            mniTable.Enabled = vActiveItem != null && vActiveItem.StyleNo == HCStyle.Table;
             if (mniTable.Enabled)
             {
                 HCTableItem vTableItem = vActiveItem as HCTableItem;

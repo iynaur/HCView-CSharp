@@ -87,6 +87,7 @@ namespace HC.View
         public HCImageItem(HCCustomData aOwnerData, int aWidth, int aHeight)
             : base(aOwnerData, aWidth, aHeight)
         {
+            FImage = new Bitmap(aWidth, aHeight);
             StyleNo = HCStyle.Image;
             FShapeManager = new HCShapeManager();
             Clear();

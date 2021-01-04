@@ -564,7 +564,7 @@ namespace HC.View
                 switch (aStyleNo)
                 {
                     case HCStyle.Image:
-                        Result = new HCImageItem(this, 0, 0);
+                        Result = new HCImageItem(this, 100, 100);
                         break;
 
                     case HCStyle.Table:
